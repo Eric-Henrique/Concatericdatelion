@@ -447,7 +447,7 @@ jobs:
       - name: Build
         # An Intel Mac runner is the slow one: its release build ran past
         # sixty minutes in v0.2.7-rc.1.
-        timeout-minutes: ${{ matrix.platform == 'macos' && matrix.arch == 'x86_64' && 100 || 60 }}
+        timeout-minutes: 120
         shell: bash
         working-directory: src
         run: |
@@ -1064,3 +1064,38 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
             --title "Concat ${VERSION} + legendas dinâmicas (build ${GITHUB_RUN_NUMBER})" \
             --notes "$notes"
+
+  # What the run did, step by step, and the log of the job, kept on this
+  # fork's ci-logs branch: the run's page wants a signed-in browser, and a
+  # branch is readable from anywhere the repository is.
+  report:
+    needs: app
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Keep the run's log on the ci-logs branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          out="run-${GITHUB_RUN_ID}"
+          mkdir -p "logs/$out"
+          cd logs
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" \
+            --jq '.jobs[] | "\(.name) \(.status) \(.conclusion)", (.steps[] | "  \(.number) \(.conclusion) \(.name) \(.started_at) \(.completed_at)")' \
+            > "$out/steps.txt" 2>&1 || true
+          job=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '.jobs[] | select(.name != "report") | .id' | head -1)
+          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job/logs" > "$out/job.log" 2>&1 || true
+          # The end of the log is where a failure is; GitHub refuses files
+          # over 100 MB, and the tail is what is read.
+          tail -n 4000 "$out/job.log" > "$out/job-tail.log" && rm "$out/job.log"
+          git init -q -b ci-logs
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A
+          git commit -qm "Logs of run $GITHUB_RUN_ID ($GITHUB_SHA)"
+          git push -fq "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-logs
