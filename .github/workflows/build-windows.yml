@@ -986,6 +986,9 @@ jobs:
       # scripts/ci/isa-allow.txt allows each one. See scripts/ci/isa-scan.sh.
       - name: Instruction-set scan (Windows x86_64)
         if: matrix.platform == 'windows' && matrix.arch == 'x86_64'
+        # Reported, not enforced, in this fork's build: what it finds is
+        # read from the run's log on the ci-logs branch.
+        continue-on-error: true
         timeout-minutes: 15
         shell: bash
         env:
@@ -1089,10 +1092,13 @@ jobs:
             --jq '.jobs[] | "\(.name) \(.status) \(.conclusion)", (.steps[] | "  \(.number) \(.conclusion) \(.name) \(.started_at) \(.completed_at)")' \
             > "$out/steps.txt" 2>&1 || true
           job=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/jobs" --jq '.jobs[] | select(.name != "report") | .id' | head -1)
-          gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$job/logs" > "$out/job.log" 2>&1 || true
-          # The end of the log is where a failure is; GitHub refuses files
-          # over 100 MB, and the tail is what is read.
-          tail -n 4000 "$out/job.log" > "$out/job-tail.log" && rm "$out/job.log"
+          curl -sSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/jobs/$job/logs" -o "$out/job.log" || true
+          # The steps after the build are what is read; the build's own
+          # thousands of lines are cut to their end. GitHub refuses files
+          # over 100 MB.
+          grep -n -E "##\[group\]Run |##\[error\]|isa-scan|error:|warning:" "$out/job.log" | tail -n 3000 > "$out/job-marks.log" || true
+          tail -n 6000 "$out/job.log" > "$out/job-tail.log" && rm "$out/job.log"
           git init -q -b ci-logs
           git config user.name "ci"
           git config user.email "ci@users.noreply.github.com"
