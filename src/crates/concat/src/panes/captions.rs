@@ -460,7 +460,12 @@ impl CaptionsPane {
             style: kept
                 .style
                 .as_ref()
-                .and_then(|id| studio.text_presets.iter().position(|preset| &preset.id == id))
+                .and_then(|id| {
+                    studio
+                        .text_presets
+                        .iter()
+                        .position(|preset| &preset.id == id)
+                })
                 .map_or(0, |index| index + 1),
             timings: std::mem::take(&mut self.timings),
             ..CaptionsPane::default()
@@ -886,7 +891,12 @@ enum Entrance {
 
 impl Entrance {
     /// In the sheet's order.
-    const ALL: [Entrance; 4] = [Entrance::None, Entrance::Pop, Entrance::Fade, Entrance::Rise];
+    const ALL: [Entrance; 4] = [
+        Entrance::None,
+        Entrance::Pop,
+        Entrance::Fade,
+        Entrance::Rise,
+    ];
 
     /// The keys for a caption `duration` seconds long sitting at
     /// `offset_y`. The entrance takes a fixed time - a fifth of a second
@@ -938,7 +948,11 @@ impl Entrance {
 /// A finished transcription as captions on the timeline: a phrase at a
 /// time as whisper heard it, or a few words at a time by their own
 /// timing, with the entrance and capitals the run was started with.
-fn spoken_captions(segments: &[Segment], subject: &Subject, base: Option<&TextStyle>) -> Vec<Command> {
+fn spoken_captions(
+    segments: &[Segment],
+    subject: &Subject,
+    base: Option<&TextStyle>,
+) -> Vec<Command> {
     let spans = if subject.layout.words == 0 {
         segments
             .iter()
@@ -984,11 +998,17 @@ fn laid_out(
             } else {
                 let length = (end - start).max(1.0 / 30.0);
                 match starts.get(index + 1) {
-                    Some(&next) if start + length >= next - 1e-6 => (next - start - 1e-6).max(1.0 / 60.0),
+                    Some(&next) if start + length >= next - 1e-6 => {
+                        (next - start - 1e-6).max(1.0 / 60.0)
+                    }
                     _ => length,
                 }
             };
-            let text = if layout.upper { text.to_uppercase() } else { text };
+            let text = if layout.upper {
+                text.to_uppercase()
+            } else {
+                text
+            };
             let keys = layout.entrance.keys(duration, look.0);
             caption_clip(text, start, duration, look, base, keys)
         })
@@ -1260,7 +1280,13 @@ mod tests {
         };
         let spans = super::word_captions(&spoken(), 2);
         let count = spans.len();
-        let commands = super::laid_out(spans, |seconds| 10.0 + seconds / 1.5, (0.35, 0.05), layout, None);
+        let commands = super::laid_out(
+            spans,
+            |seconds| 10.0 + seconds / 1.5,
+            (0.35, 0.05),
+            layout,
+            None,
+        );
         let mut editor = concat_project::Editor::new();
         editor
             .apply(concat_project::Command::Batch { commands })
@@ -1272,7 +1298,10 @@ mod tests {
             .iter()
             .min_by(|a, b| a.start.total_cmp(&b.start))
             .expect("a caption");
-        assert_eq!(first.text.as_ref().map(|style| style.content.as_str()), Some("OLÁ"));
+        assert_eq!(
+            first.text.as_ref().map(|style| style.content.as_str()),
+            Some("OLÁ")
+        );
         assert!((first.start - 10.0).abs() < 1e-9);
         for clip in clips.iter() {
             let scale: Vec<_> = clip
@@ -1282,7 +1311,11 @@ mod tests {
                 .collect();
             assert_eq!(scale.len(), 3);
             assert!((scale.last().expect("a key").value - 1.0).abs() < 1e-9);
-            assert!(clip.keys.iter().all(|key| (0.0..=0.5 + 1e-9).contains(&key.at)));
+            assert!(
+                clip.keys
+                    .iter()
+                    .all(|key| (0.0..=0.5 + 1e-9).contains(&key.at))
+            );
         }
         // One undo takes the whole run away.
         assert!(editor.undo());
@@ -1292,7 +1325,11 @@ mod tests {
     #[test]
     fn each_entrance_settles_where_the_caption_sits() {
         assert!(super::Entrance::None.keys(1.0, 0.35).is_empty());
-        for entrance in [super::Entrance::Pop, super::Entrance::Fade, super::Entrance::Rise] {
+        for entrance in [
+            super::Entrance::Pop,
+            super::Entrance::Fade,
+            super::Entrance::Rise,
+        ] {
             for duration in [0.1, 0.5, 3.0] {
                 let keys = entrance.keys(duration, 0.35);
                 assert!(!keys.is_empty());

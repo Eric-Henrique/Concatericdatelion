@@ -396,7 +396,10 @@ pub(crate) fn words_from_tokens(pieces: &[TokenPiece], start: f64, end: f64) -> 
         word.end = word.end.clamp(word.start, end);
         floor = word.end;
     }
-    let flat = words.iter().filter(|word| word.end - word.start < 0.02).count();
+    let flat = words
+        .iter()
+        .filter(|word| word.end - word.start < 0.02)
+        .count();
     if flat * 2 > words.len() {
         let text: Vec<&str> = words.iter().map(|word| word.text.as_str()).collect();
         return spread_words(&text.join(" "), start, end);
@@ -809,7 +812,11 @@ mod tests {
         let words = words_from_tokens(&pieces, 1.0, 2.5);
         assert_eq!(words.len(), 3);
         assert_eq!(words[0].start, 1.0);
-        assert!(words.iter().all(|word| word.end <= 2.5 && word.start >= 1.0));
+        assert!(
+            words
+                .iter()
+                .all(|word| word.end <= 2.5 && word.start >= 1.0)
+        );
         for pair in words.windows(2) {
             assert!(pair[0].end <= pair[1].start + 1e-9);
         }
