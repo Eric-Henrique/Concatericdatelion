@@ -1,0 +1,17 @@
+id = "concat.caption-red-box"
+name = "Caixa vermelha"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "LEGENDA"
+fontFamily = "Montserrat"
+fontWeight = 900
+fontSize = 0.06
+color = "#ffffff"
+background = "#e1251b"
+backgroundRadius = 0.01
+backgroundPaddingX = 0.022
+backgroundPaddingY = 0.012
+shadow = false

@@ -13,7 +13,8 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use crate::model::{
-    AppliedFilter, AudioTrack, Background, Clip, ClipKind, ClipMask, ColorRange, ColorSpace, Crop,
+    AppliedFilter, AudioTrack, Background, Clip, ClipKey, ClipKind, ClipMask, ColorRange,
+    ColorSpace, Crop,
     CustomFont, Cutout, CutoutMode, Enhanced, Framing, KeyEase, KeyProperty, MediaItem, MediaKind,
     MediaOrigin, Project, ShapeStyle, SpeedPoint, Stabilize, Stroke, TextStyle, Timeline, Track,
     Transition, VideoSettings,
@@ -372,6 +373,13 @@ pub enum Command {
         /// SetClipTransform. Lower thirds are made of this.
         #[serde(default)]
         offset_y: Option<f64>,
+        /// Keys the title lands with - a caption's entrance, a pop or a
+        /// fade - each clamped and placed as [`Command::SetClipKey`] would
+        /// place it. Here for the reason `duration` is: a caption run lands
+        /// as one batch, and a batch cannot key a clip whose id it cannot
+        /// know yet. Empty is a title with none.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        keys: Vec<ClipKey>,
     },
     /// Places a shape: a clip with no media behind it that draws one
     /// figure over the picture, minting a "c" id. Lands the way a title
@@ -1020,11 +1028,15 @@ impl Command {
                 duration,
                 offset_y,
                 style,
+                keys,
                 ..
             } => {
                 bad([*start])
                     || bad(*duration)
                     || bad(*offset_y)
+                    || keys
+                        .iter()
+                        .any(|key| bad([key.at, key.value]) || bad(key.ease.0))
                     || style.iter().any(|style| {
                         bad([
                             style.font_size,

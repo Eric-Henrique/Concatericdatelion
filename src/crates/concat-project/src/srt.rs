@@ -363,6 +363,7 @@ mod tests {
                     }),
                     duration: Some(1.5),
                     offset_y: None,
+                    keys: Vec::new(),
                 })
                 .expect("adds")
                 .created_id

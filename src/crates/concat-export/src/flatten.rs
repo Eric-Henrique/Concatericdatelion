@@ -423,6 +423,7 @@ mod tests {
                 style: None,
                 duration: None,
                 offset_y: None,
+                keys: Vec::new(),
             })
             .expect("adds title");
         let flat = flatten_timeline(editor.project(), None);

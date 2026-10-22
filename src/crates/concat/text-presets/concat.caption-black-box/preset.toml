@@ -1,0 +1,17 @@
+id = "concat.caption-black-box"
+name = "Caixa preta"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "Legenda"
+fontFamily = "Montserrat"
+fontWeight = 800
+fontSize = 0.06
+color = "#ffffff"
+background = "#000000d9"
+backgroundRadius = 0.012
+backgroundPaddingX = 0.022
+backgroundPaddingY = 0.012
+shadow = false

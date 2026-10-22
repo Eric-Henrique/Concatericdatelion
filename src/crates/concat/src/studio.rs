@@ -3942,6 +3942,7 @@ impl Studio {
             duration: Some(duration),
             offset_y,
             above: true,
+            keys: Vec::new(),
         };
         match font {
             Some((family, path)) => self.apply(Command::Batch {
@@ -7977,6 +7978,7 @@ impl Studio {
                     style: source.text.clone(),
                     duration: Some(source.duration),
                     offset_y: Some(source.offset_y),
+                    keys: Vec::new(),
                 },
             );
         }

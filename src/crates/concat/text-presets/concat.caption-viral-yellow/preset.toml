@@ -1,0 +1,14 @@
+id = "concat.caption-viral-yellow"
+name = "Viral amarelo"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "LEGENDA"
+fontFamily = "Montserrat"
+fontWeight = 900
+fontSize = 0.07
+color = "#ffe135"
+strokeWidth = 0.012
+strokeColor = "#000000"

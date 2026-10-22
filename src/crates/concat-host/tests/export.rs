@@ -1716,6 +1716,7 @@ fn every_edit_still_exports() {
         }),
         duration: Some(2.0),
         offset_y: None,
+        keys: Vec::new(),
     });
     let exported = studio.export("title");
     exported.expect_length(end);

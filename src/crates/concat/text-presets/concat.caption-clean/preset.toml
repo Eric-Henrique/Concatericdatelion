@@ -1,0 +1,13 @@
+id = "concat.caption-clean"
+name = "Limpo"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "Legenda"
+fontFamily = "Inter"
+fontWeight = 700
+fontSize = 0.055
+color = "#ffffff"
+shadow = true

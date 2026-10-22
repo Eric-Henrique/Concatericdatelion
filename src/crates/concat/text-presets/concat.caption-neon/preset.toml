@@ -1,0 +1,14 @@
+id = "concat.caption-neon"
+name = "Neon verde"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "LEGENDA"
+fontFamily = "Montserrat"
+fontWeight = 900
+fontSize = 0.07
+color = "#39ff14"
+strokeWidth = 0.008
+strokeColor = "#002b00"

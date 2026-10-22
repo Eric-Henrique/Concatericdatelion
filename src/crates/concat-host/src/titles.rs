@@ -636,6 +636,7 @@ mod tests {
                 style: None,
                 duration: Some(3.0),
                 offset_y: None,
+                keys: Vec::new(),
             })
             .expect("a title is added")
             .created_id
@@ -681,6 +682,7 @@ mod tests {
                 style: None,
                 duration: Some(3.0),
                 offset_y: Some(0.3),
+                keys: Vec::new(),
             })
             .expect("a title is added")
             .created_id

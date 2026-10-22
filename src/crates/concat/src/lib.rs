@@ -2034,6 +2034,18 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
     app.on_captions_size_changed(on_window!(|state, index: i32| {
         state.handle(Msg::Captions(CaptionsMsg::SizeChanged(index)));
     }));
+    app.on_captions_words_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::WordsChanged(index)));
+    }));
+    app.on_captions_animation_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::AnimationChanged(index)));
+    }));
+    app.on_captions_upper_toggled(on_window!(|state, on: bool| {
+        state.handle(Msg::Captions(CaptionsMsg::UpperToggled(on)));
+    }));
+    app.on_captions_style_changed(on_window!(|state, index: i32| {
+        state.handle(Msg::Captions(CaptionsMsg::StyleChanged(index)));
+    }));
     app.on_captions_begin(on_window!(|state| {
         state.handle(Msg::Captions(CaptionsMsg::Begin));
     }));

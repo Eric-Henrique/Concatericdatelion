@@ -1,0 +1,14 @@
+id = "concat.caption-tall"
+name = "Bebas"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "LEGENDA"
+fontFamily = "Bebas Neue"
+fontWeight = 400
+fontSize = 0.09
+color = "#ffffff"
+strokeWidth = 0.01
+strokeColor = "#000000"

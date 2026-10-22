@@ -1,0 +1,15 @@
+id = "concat.caption-comic"
+name = "Gibi"
+language = "Latin"
+order = 2
+offsetY = 0.3
+
+[style]
+content = "LEGENDA"
+fontFamily = "Bangers"
+fontWeight = 400
+fontSize = 0.08
+color = "#ffd400"
+strokeWidth = 0.012
+strokeColor = "#000000"
+tracking = 0.002

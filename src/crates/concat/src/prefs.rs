@@ -114,6 +114,10 @@ pub struct Preferences {
     /// How the voiceover panel was last set up.
     #[serde(default)]
     pub voiceover: VoiceoverPrefs,
+    /// How the captions sheet was last set up: words at a time, the
+    /// entrance, capitals.
+    #[serde(default)]
+    pub captions: CaptionPrefs,
     /// Rebound shortcuts, by action id: the chord each was given, or ""
     /// for an action a rebind left with none. Absent is the shipped
     /// chord — the file holds what moved, not the whole table. Written
@@ -140,6 +144,23 @@ pub struct VoiceoverPrefs {
     pub gain_db: f32,
     /// How fast the teleprompter scrolls: 0 slow, 1 steady, 2 fast.
     pub prompt_speed: u8,
+}
+
+/// The captions sheet's choices that outlive one run and one launch: a
+/// look chosen for a channel's videos is the look of the next one too.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CaptionPrefs {
+    /// Words on screen at a time: 0 a whole phrase as it was spoken, else
+    /// one to three.
+    pub words: u8,
+    /// How each caption comes in: 0 none, 1 pop, 2 fade, 3 rise.
+    pub animation: u8,
+    /// Every caption in capitals.
+    pub upper: bool,
+    /// The text preset captions are set in, by id; None is the look kept
+    /// by "Use for new titles".
+    pub style: Option<String>,
 }
 
 impl Default for VoiceoverPrefs {

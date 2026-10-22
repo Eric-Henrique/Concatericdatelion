@@ -262,6 +262,154 @@ pub struct Segment {
     pub end: f64,
     /// What was said.
     pub text: String,
+    /// The same words one at a time, each with when it is said, in order
+    /// and inside the segment's span: what a caption of a word or three at
+    /// a time is cut from. Empty when whisper gave nothing to time them by;
+    /// [`Segment::timed_words`] then spreads the text over the span.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub words: Vec<Word>,
+}
+
+/// One spoken word, in seconds relative to the transcribed window's start.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Word {
+    /// Seconds from the window's start.
+    pub start: f64,
+    /// Seconds from the window's start; after `start`.
+    pub end: f64,
+    /// The word, with the punctuation that clings to it.
+    pub text: String,
+}
+
+impl Segment {
+    /// The segment's words with their timing: whisper's, when it timed
+    /// them, and otherwise the text's words spread over the segment by
+    /// their length, the way a reader's eye moves along a line.
+    pub fn timed_words(&self) -> Vec<Word> {
+        if !self.words.is_empty() {
+            return self.words.clone();
+        }
+        spread_words(&self.text, self.start, self.end)
+    }
+}
+
+/// `text`'s words across `start..end`, each given time in proportion to
+/// its characters (and a character's worth more, so a one-letter word is
+/// not a flicker).
+pub fn spread_words(text: &str, start: f64, end: f64) -> Vec<Word> {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let weight = |word: &str| word.chars().count() as f64 + 1.0;
+    let total: f64 = words.iter().map(|word| weight(word)).sum();
+    let span = (end - start).max(0.0);
+    if words.is_empty() || total <= 0.0 {
+        return Vec::new();
+    }
+    let mut at = start;
+    words
+        .into_iter()
+        .map(|word| {
+            let length = span * weight(word) / total;
+            let timed = Word {
+                start: at,
+                end: at + length,
+                text: word.to_owned(),
+            };
+            at += length;
+            timed
+        })
+        .collect()
+}
+
+/// One piece of a segment as whisper decoded it: the token's bytes - a
+/// word, part of one, or punctuation, a leading space where a new word
+/// begins - and its span in whisper's centiseconds.
+pub(crate) struct TokenPiece {
+    pub bytes: Vec<u8>,
+    pub t0: i64,
+    pub t1: i64,
+}
+
+/// A segment's words from its tokens. A token whose text starts with a
+/// space begins a word; any other continues the one before it, which is
+/// how whisper spells a long word in pieces and keeps a comma on the word
+/// it follows. A word's bytes are joined before they are read as UTF-8,
+/// because an accented letter can be split across two tokens.
+///
+/// The token timestamps are a heuristic, and they drift: each word is held
+/// inside the segment and after the word before it, and when too many come
+/// out with no length at all the text is spread over the segment instead
+/// ([`spread_words`]), which reads better than words that flash past.
+pub(crate) fn words_from_tokens(pieces: &[TokenPiece], start: f64, end: f64) -> Vec<Word> {
+    struct Building {
+        bytes: Vec<u8>,
+        t0: i64,
+        t1: i64,
+    }
+    let mut built: Vec<Building> = Vec::new();
+    for piece in pieces {
+        if piece.bytes.is_empty() {
+            continue;
+        }
+        let begins = piece.bytes[0] == b' ' || built.is_empty();
+        match built.last_mut() {
+            Some(word) if !begins => {
+                word.bytes.extend_from_slice(&piece.bytes);
+                word.t1 = word.t1.max(piece.t1);
+            }
+            _ => built.push(Building {
+                bytes: piece.bytes.clone(),
+                t0: piece.t0,
+                t1: piece.t1,
+            }),
+        }
+    }
+    // A run of punctuation with a space before it (" -", " ...") is not a
+    // word of its own: it joins the word before it.
+    let mut words: Vec<Word> = Vec::new();
+    for word in built {
+        let text = String::from_utf8_lossy(&word.bytes).trim().to_owned();
+        if text.is_empty() {
+            continue;
+        }
+        let (t0, t1) = (word.t0 as f64 / 100.0, word.t1 as f64 / 100.0);
+        if !text.chars().any(char::is_alphanumeric)
+            && let Some(last) = words.last_mut()
+        {
+            last.text.push_str(&text);
+            last.end = last.end.max(t1);
+            continue;
+        }
+        words.push(Word {
+            start: t0,
+            end: t1,
+            text,
+        });
+    }
+    if words.is_empty() {
+        return Vec::new();
+    }
+    // Inside the segment, in order, never overlapping.
+    let mut floor = start;
+    for word in &mut words {
+        word.start = word.start.clamp(floor, end);
+        word.end = word.end.clamp(word.start, end);
+        floor = word.end;
+    }
+    let flat = words.iter().filter(|word| word.end - word.start < 0.02).count();
+    if flat * 2 > words.len() {
+        let text: Vec<&str> = words.iter().map(|word| word.text.as_str()).collect();
+        return spread_words(&text.join(" "), start, end);
+    }
+    // A word left with no length borrows the start of the next one, so
+    // every word is on screen for a moment.
+    for index in 0..words.len() {
+        if words[index].end - words[index].start < 0.02 {
+            let next = words.get(index + 1).map_or(end, |next| next.start);
+            words[index].end = (words[index].start + 0.08).min(next.max(words[index].start));
+        }
+    }
+    words
 }
 
 /// What to transcribe.
@@ -495,6 +643,9 @@ impl Transcriber {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_suppress_blank(true);
+        // Each token's own span, so a caption can follow the words one at
+        // a time; the segments themselves come out as they would without.
+        params.set_token_timestamps(true);
         // The raw hooks, not `set_abort_callback_safe`. whisper-rs 0.16's
         // safe one hands whisper a pointer to a boxed trait object with a
         // trampoline typed for the closure itself, so whisper reads the
@@ -537,6 +688,9 @@ impl Transcriber {
             return Err("transcription cancelled".to_owned());
         }
 
+        // Ids from end-of-text up are whisper's own markers - start of
+        // transcript, timestamps, language - not words.
+        let markers = context.token_eot();
         Ok(state
             .as_iter()
             .filter_map(|segment| {
@@ -544,7 +698,21 @@ impl Transcriber {
                 let start = segment.start_timestamp() as f64 / 100.0;
                 let end = segment.end_timestamp() as f64 / 100.0;
                 let text = segment.to_str_lossy().ok()?.trim().to_owned();
-                keep_segment(start, end, text)
+                let pieces: Vec<TokenPiece> = (0..segment.n_tokens())
+                    .filter_map(|index| segment.get_token(index))
+                    .filter(|token| token.token_id() < markers)
+                    .filter_map(|token| {
+                        let data = token.token_data();
+                        Some(TokenPiece {
+                            bytes: token.to_bytes().ok()?.to_vec(),
+                            t0: data.t0,
+                            t1: data.t1,
+                        })
+                    })
+                    .collect();
+                let mut kept = keep_segment(start, end, text)?;
+                kept.words = words_from_tokens(&pieces, kept.start, kept.end);
+                Some(kept)
             })
             .collect())
     }
@@ -567,7 +735,12 @@ fn keep_segment(start: f64, end: f64, text: String) -> Option<Segment> {
     if text.is_empty() || (text.starts_with('[') && text.ends_with(']')) {
         return None;
     }
-    (end > start).then_some(Segment { start, end, text })
+    (end > start).then_some(Segment {
+        start,
+        end,
+        text,
+        words: Vec::new(),
+    })
 }
 
 #[cfg(test)]
@@ -583,6 +756,83 @@ mod tests {
         assert!(keep_segment(2.5, 2.5, "degenerate".to_owned()).is_none());
         assert!(keep_segment(3.0, 4.0, "[BLANK_AUDIO]".to_owned()).is_none());
         assert!(keep_segment(3.0, 4.0, String::new()).is_none());
+    }
+
+    fn piece(text: &str, t0: i64, t1: i64) -> TokenPiece {
+        TokenPiece {
+            bytes: text.as_bytes().to_vec(),
+            t0,
+            t1,
+        }
+    }
+
+    #[test]
+    fn tokens_join_into_timed_words() {
+        // "Olá, tudo bem?" as whisper spells it: a word in pieces, the
+        // comma on the word before it, "á" split across two tokens.
+        let ola = "Olá".as_bytes();
+        let pieces = vec![
+            TokenPiece {
+                bytes: [b" ", &ola[..3]].concat(),
+                t0: 0,
+                t1: 20,
+            },
+            TokenPiece {
+                bytes: ola[3..].to_vec(),
+                t0: 20,
+                t1: 30,
+            },
+            piece(",", 30, 32),
+            piece(" tudo", 40, 70),
+            piece(" bem", 75, 100),
+            piece("?", 100, 102),
+        ];
+        let words = words_from_tokens(&pieces, 0.0, 1.2);
+        let text: Vec<&str> = words.iter().map(|word| word.text.as_str()).collect();
+        assert_eq!(text, ["Olá,", "tudo", "bem?"]);
+        assert_eq!(words[0].start, 0.0);
+        assert!((words[1].start - 0.4).abs() < 1e-9);
+        assert!((words[2].end - 1.02).abs() < 1e-9);
+        for pair in words.windows(2) {
+            assert!(pair[0].end <= pair[1].start + 1e-9);
+        }
+    }
+
+    #[test]
+    fn words_stay_inside_their_segment_and_in_order() {
+        // Drifting timestamps: before the segment, overlapping, past it.
+        let pieces = vec![
+            piece(" one", 90, 130),
+            piece(" two", 120, 160),
+            piece(" three", 150, 400),
+        ];
+        let words = words_from_tokens(&pieces, 1.0, 2.5);
+        assert_eq!(words.len(), 3);
+        assert_eq!(words[0].start, 1.0);
+        assert!(words.iter().all(|word| word.end <= 2.5 && word.start >= 1.0));
+        for pair in words.windows(2) {
+            assert!(pair[0].end <= pair[1].start + 1e-9);
+        }
+    }
+
+    #[test]
+    fn untimed_tokens_are_spread_over_the_segment() {
+        let pieces = vec![piece(" a", 0, 0), piece(" bb", 0, 0), piece(" ccc", 0, 0)];
+        let words = words_from_tokens(&pieces, 2.0, 4.0);
+        assert_eq!(words.len(), 3);
+        assert_eq!(words[0].start, 2.0);
+        assert!((words[2].end - 4.0).abs() < 1e-9);
+        // Longer words are held longer.
+        assert!(words[2].end - words[2].start > words[0].end - words[0].start);
+    }
+
+    #[test]
+    fn a_segment_without_word_times_spreads_its_text() {
+        let segment = keep_segment(0.0, 3.0, "um dois três".to_owned()).expect("kept");
+        let words = segment.timed_words();
+        let text: Vec<&str> = words.iter().map(|word| word.text.as_str()).collect();
+        assert_eq!(text, ["um", "dois", "três"]);
+        assert!((words.last().expect("a word").end - 3.0).abs() < 1e-9);
     }
 
     #[test]

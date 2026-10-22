@@ -194,20 +194,7 @@ pub(super) fn apply(
             if !at.is_finite() || !value.is_finite() {
                 return Ok(Outcome::default());
             }
-            // Clamped the way the field itself is, so a key can never hold a
-            // value the constant would have been refused. The clamps are the
-            // ones ClipPatch applies; keeping them here as well is what stops
-            // a key being the back door round them.
-            let value = match property {
-                KeyProperty::Scale => value.clamp(MIN_SCALE, MAX_SCALE),
-                KeyProperty::Opacity => value.clamp(0.0, 1.0),
-                // No ceiling, matching ClipPatch: the level fader goes to
-                // +24 dB because quiet material needs it, and a key is the
-                // same value at a different instant.
-                KeyProperty::Volume => value.max(0.0),
-                KeyProperty::OffsetX | KeyProperty::OffsetY | KeyProperty::Rotation => value,
-                mask => ClipMask::clamp(mask, value),
-            };
+            let value = clamp_key_value(property, value);
             let before = clip.keys.clone();
             clip.set_key(property, at, value, ease);
             Ok(Outcome {
@@ -407,5 +394,23 @@ pub(super) fn apply(
         }
 
         _ => unreachable!("commands::apply routes only this module's commands here"),
+    }
+}
+
+/// A key's value clamped the way the field itself is, so a key can never
+/// hold a value the constant would have been refused. The clamps are the
+/// ones ClipPatch applies; keeping them here as well is what stops a key
+/// being the back door round them. Shared by [`Command::SetClipKey`] and
+/// the keys a title lands with ([`Command::AddTextClip::keys`]).
+pub(super) fn clamp_key_value(property: KeyProperty, value: f64) -> f64 {
+    match property {
+        KeyProperty::Scale => value.clamp(MIN_SCALE, MAX_SCALE),
+        KeyProperty::Opacity => value.clamp(0.0, 1.0),
+        // No ceiling, matching ClipPatch: the level fader goes to
+        // +24 dB because quiet material needs it, and a key is the
+        // same value at a different instant.
+        KeyProperty::Volume => value.max(0.0),
+        KeyProperty::OffsetX | KeyProperty::OffsetY | KeyProperty::Rotation => value,
+        mask => ClipMask::clamp(mask, value),
     }
 }

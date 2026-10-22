@@ -45,6 +45,16 @@ export struct CaptionsSheetData {
     placement: int,
     /// 0 Small, 1 Medium, 2 Large
     size: int,
+    /// Words on screen at a time: 0 a phrase, else 1, 2 or 3.
+    words: int,
+    /// How each caption comes in: 0 none, 1 pop, 2 fade, 3 rise.
+    animation: int,
+    /// Every caption in capitals.
+    upper: bool,
+    /// The looks on offer: the kept one first, then the text presets.
+    styles: [string],
+    /// Row in `styles`.
+    style: int,
     running: bool,
     /// 0..1: where the transcription surely is.
     progress: float,
@@ -74,6 +84,10 @@ export component CaptionsDialog inherits Modal {
     callback model-changed(index: int);
     callback placement-changed(index: int);
     callback size-changed(index: int);
+    callback words-changed(index: int);
+    callback animation-changed(index: int);
+    callback upper-toggled(on: bool);
+    callback style-changed(index: int);
     callback begin();
     callback cancel();
     callback import-srt();
@@ -219,6 +233,18 @@ export component CaptionsDialog inherits Modal {
         if !root.data.running: DialogSection {
             title: I18n.t("captions.captions");
 
+            // The look: the one kept by "Use for new titles", or any text
+            // preset, the caption styles among them, without placing a
+            // title first.
+            DialogRow {
+                label: I18n.t("captions.style");
+                Select {
+                    options: root.data.styles;
+                    current: root.data.style;
+                    changed(index) => { root.style-changed(index); }
+                }
+            }
+
             DialogRow {
                 label: I18n.t("captions.placement");
                 SegmentedControl {
@@ -237,8 +263,47 @@ export component CaptionsDialog inherits Modal {
                 }
             }
 
+            // Words at a time, the short-video way: a phrase as it was
+            // spoken, or one, two or three words, each caption on screen
+            // while its words are said.
+            DialogRow {
+                label: I18n.t("captions.words");
+                SegmentedControl {
+                    options: [I18n.t("captions.phrase"), "1", "2", "3"];
+                    current: root.data.words;
+                    changed(index) => { root.words-changed(index); }
+                }
+            }
+
+            // How each caption comes in, as keys on its title: changed
+            // afterwards like any other key.
+            DialogRow {
+                label: I18n.t("captions.animation");
+                SegmentedControl {
+                    options: [I18n.t("captions.animationNone"), I18n.t("captions.pop"),
+                        I18n.t("captions.fade"), I18n.t("captions.rise")];
+                    current: root.data.animation;
+                    changed(index) => { root.animation-changed(index); }
+                }
+            }
+
+            DialogRow {
+                label: I18n.t("captions.allCaps");
+                VerticalLayout {
+                    alignment: center;
+                    Switch {
+                        checked: root.data.upper;
+                        toggled(on) => { root.upper-toggled(on); }
+                    }
+                }
+                Rectangle { horizontal-stretch: 1; }
+            }
+
             Text {
-                text: root.from-voice
+                text: root.data.words == 1 ? I18n.t("captions.oneWordAtATime")
+                    : root.data.words == 2 ? I18n.t("captions.twoWordsAtATime")
+                    : root.data.words == 3 ? I18n.t("captions.threeWordsAtATime")
+                    : root.from-voice
                     ? I18n.t("captions.oneTitlePerPhrase")
                     : I18n.t("captions.oneTitlePerSentence");
                 color: Theme.fg-dim;
