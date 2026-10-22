@@ -1,0 +1,42 @@
+windows-x86_64 completed success
+  1 success Set up job 2026-10-22T21:15:45Z 2026-10-22T21:15:47Z
+  2 success Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 2026-10-22T21:15:47Z 2026-10-22T21:15:53Z
+  3 success The pinned toolchain 2026-10-22T21:15:53Z 2026-10-22T21:15:54Z
+  4 success Run dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f 2026-10-22T21:15:54Z 2026-10-22T21:16:05Z
+  5 success Read the version 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  6 skipped System libraries (Linux) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  7 skipped FFmpeg development libraries (Linux) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  8 skipped ONNX Runtime (Linux) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  9 skipped FFmpeg development libraries (macOS) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  10 skipped ONNX Runtime (Intel macOS) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  11 skipped Thin LTO (Intel macOS) 2026-10-22T21:16:05Z 2026-10-22T21:16:05Z
+  12 success FFmpeg development libraries and LLVM (Windows) 2026-10-22T21:16:05Z 2026-10-22T21:17:13Z
+  13 success ONNX Runtime (Windows) 2026-10-22T21:17:13Z 2026-10-22T21:17:16Z
+  14 skipped sherpa-onnx static libraries (macOS and Linux) 2026-10-22T21:17:16Z 2026-10-22T21:17:16Z
+  15 success sherpa-onnx shared libraries (Windows) 2026-10-22T21:17:16Z 2026-10-22T21:17:19Z
+  16 success Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 2026-10-22T21:17:19Z 2026-10-22T21:17:25Z
+  17 success Build 2026-10-22T21:17:25Z 2026-10-22T22:02:01Z
+  18 skipped Build log to the summary (failure only) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  19 skipped Bundle (macOS) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  20 skipped Sign and notarise (macOS) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  21 skipped Smoke test (macOS) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  22 skipped Stage (Linux) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  23 skipped Smoke test (Linux) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  24 skipped Instruction-set scan (Linux x86_64) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  25 skipped Package (Arch Linux) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  26 skipped Package (Linux) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  27 skipped Smoke test in clean distributions (Linux) 2026-10-22T22:02:01Z 2026-10-22T22:02:01Z
+  28 success Stage (Windows) 2026-10-22T22:02:01Z 2026-10-22T22:02:08Z
+  29 success Sign (Windows) 2026-10-22T22:02:08Z 2026-10-22T22:02:08Z
+  30 success Smoke test (Windows) 2026-10-22T22:02:08Z 2026-10-22T22:02:14Z
+  31 success Instruction-set scan (Windows x86_64) 2026-10-22T22:02:14Z 2026-10-22T22:06:05Z
+  32 success Installers (Windows) 2026-10-22T22:06:05Z 2026-10-22T22:08:06Z
+  33 skipped Forget the certificate (Windows) 2026-10-22T22:08:06Z 2026-10-22T22:08:06Z
+  34 success Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 2026-10-22T22:08:06Z 2026-10-22T22:08:14Z
+  35 success Publish the installers 2026-10-22T22:08:14Z 2026-10-22T22:08:25Z
+  69 success Post Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 2026-10-22T22:08:25Z 2026-10-22T22:11:07Z
+  70 success Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 2026-10-22T22:11:07Z 2026-10-22T22:11:09Z
+  71 success Complete job 2026-10-22T22:11:09Z 2026-10-22T22:11:09Z
+report in_progress null
+  1 success Set up job 2026-10-22T22:11:15Z 2026-10-22T22:11:15Z
+  2 null Keep the run's log on the ci-logs branch 2026-10-22T22:11:15Z null

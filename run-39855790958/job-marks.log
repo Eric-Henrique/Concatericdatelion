@@ -1,0 +1,30 @@
+36:2026-10-22T21:15:47.6481361Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+122:2026-10-22T21:15:53.9520214Z ##[group]Run echo "channel=$(sed -n 's/^channel = "\(.*\)"/\1/p' src/rust-toolchain.toml)" >> "$GITHUB_OUTPUT"
+139:2026-10-22T21:15:54.1841520Z ##[group]Run dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f
+157:2026-10-22T21:15:54.2091218Z ##[group]Run if [[ -z $toolchain ]]; then
+195:2026-10-22T21:15:54.2547394Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$USERPROFILE\.cargo"} >> $GITHUB_ENV
+216:2026-10-22T21:15:54.2982276Z ##[group]Run if ! command -v rustup &>/dev/null; then
+240:2026-10-22T21:15:54.3507576Z ##[group]Run set -f  # split targets and components on commas and whitespace, without glob expansion
+289:2026-10-22T21:16:04.0400233Z ##[group]Run rustup default "$toolchain" --force-non-host
+315:2026-10-22T21:16:04.1741194Z ##[group]Run DATE=$(rustc +"$toolchain" --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+338:2026-10-22T21:16:05.1075487Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+360:2026-10-22T21:16:05.1523215Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+383:2026-10-22T21:16:05.1935891Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+414:2026-10-22T21:16:05.3728824Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+439:2026-10-22T21:16:05.4814874Z ##[group]Run rustc +"$toolchain" --version --verbose
+467:2026-10-22T21:16:05.5705489Z ##[group]Run version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/Cargo.toml | head -1)
+489:2026-10-22T21:16:05.6749760Z ##[group]Run $ErrorActionPreference = "Stop"
+536:2026-10-22T21:17:13.5224662Z ##[group]Run $ErrorActionPreference = "Stop"
+569:2026-10-22T21:17:16.6439516Z ##[group]Run $ErrorActionPreference = "Stop"
+614:2026-10-22T21:17:19.3432589Z ##[group]Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+714:2026-10-22T21:17:25.9761914Z ##[group]Run set -o pipefail
+1699:2026-10-22T22:02:01.5747880Z ##[group]Run $ErrorActionPreference = "Stop"
+1810:2026-10-22T22:02:08.0552168Z ##[group]Run $ErrorActionPreference = "Stop"
+1870:2026-10-22T22:02:08.4129719Z ##[group]Run scripts/ci/smoke-windows.ps1 -Bundle "stage\Concat-$env:VERSION-windows-x86_64"
+1980:2026-10-22T22:02:14.4851532Z ##[group]Run scripts/ci/isa-scan.sh "stage/Concat-${VERSION}-windows-x86_64"
+1981:2026-10-22T22:02:14.4852123Z [36;1mscripts/ci/isa-scan.sh "stage/Concat-${VERSION}-windows-x86_64"[0m
+2065:2026-10-22T22:06:05.8133746Z isa-scan: a file holds more post-Ivy Bridge instructions than scripts/ci/isa-allow.txt allows it.
+2067:2026-10-22T22:06:05.8195066Z ##[error]Process completed with exit code 1.
+2068:2026-10-22T22:06:05.8342124Z ##[group]Run $ErrorActionPreference = "Stop"
+2548:2026-10-22T22:08:06.2849942Z ##[group]Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+2615:2026-10-22T22:08:14.2407258Z ##[group]Run set -euo pipefail
